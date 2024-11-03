@@ -1,121 +1,88 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <errno.h>
+#include <gtest/gtest.h>
+#include "StringCalculator.h"
 
-#define MAX_NUMBERS 1000
+TEST(StringCalculatorAddTests, ExpectZeroForEmptyInput) {
+    int expectedresult = 0;
+    std::string input = "";
+    StringCalculator objUnderTest;
+    int result = objUnderTest.CalculateAdd(input);
 
-// Function to calculate the sum from a string input
-int CalculateAdd(const char* input) {
-    if (strlen(input) == 0) return 0; // Handle empty input
-
-    int sum = 0;
-    char* token;
-    char* endptr;
-    char* str = strdup(input); // Duplicate input for tokenization
-    const char* delimiters = ",\n"; // Default delimiters
-
-    // Check for custom delimiter
-    if (str[0] == '/' && str[1] == '/') {
-        // Extract custom delimiter
-        char* customDelim = strtok(str + 2, "\n");
-        delimiters = customDelim;
-        str = strtok(NULL, ""); // Get the rest of the string
-    }
-
-    token = strtok(str, delimiters);
-    while (token != NULL) {
-        int number = strtol(token, &endptr, 10);
-
-        // Handle non-numeric input
-        if (*endptr != '\0') {
-            free(str);
-            return 0; // Non-numeric input returns zero
-        }
-
-        // Handle negative numbers
-        if (number < 0) {
-            free(str);
-            fprintf(stderr, "Negative numbers are not allowed: %d\n", number);
-            exit(EXIT_FAILURE); // Raise an error for negative numbers
-        }
-
-        // Ignore numbers greater than 1000
-        if (number <= MAX_NUMBERS) {
-            sum += number;
-        }
-
-        token = strtok(NULL, delimiters);
-    }
-
-    free(str);
-    return sum;
+    ASSERT_EQ(result, expectedresult);
 }
 
-// Test cases
-void testEmptyInput() {
-    int result = CalculateAdd("");
-    printf("Expect Zero For Empty Input: %s\n", result == 0 ? "Passed" : "Failed");
+TEST(StringCalculatorAddTests, ExpectZeroForSingleZero) {
+    int expectedresult = 0;
+    std::string input = "0";
+    StringCalculator objUnderTest;
+    int result = objUnderTest.CalculateAdd(input);
+
+    ASSERT_EQ(result, expectedresult);
 }
 
-void testSingleZero() {
-    int result = CalculateAdd("0");
-    printf("Expect Zero For Single Zero: %s\n", result == 0 ? "Passed" : "Failed");
+TEST(StringCalculatorAddTests, ExpectSumForTwoNumbers) {
+    int expectedresult = 3;
+    std::string input = "1,2";
+    StringCalculator objUnderTest;
+    int result = objUnderTest.CalculateAdd(input);
+
+    ASSERT_EQ(result, expectedresult);
 }
 
-void testTwoNumbers() {
-    int result = CalculateAdd("1,2");
-    printf("Expect Sum For Two Numbers: %s\n", result == 3 ? "Passed" : "Failed");
+TEST(StringCalculatorAddTests, ExpectExceptionForNegativeNumbers) {
+    ASSERT_THROW({
+        std::string input = "-1,2";
+        StringCalculator objUnderTest;
+       objUnderTest.CalculateAdd(input);
+        }, std::runtime_error);
 }
 
-void testNegativeNumbers() {
-    // This will exit the program; hence only print the intention
-    printf("Expect Exception For Negative Numbers: (check stderr)\n");
-    char input[] = "-1,2";
-    if (CalculateAdd(input) == 0) {
-        printf("  Passed\n");
-    }
+TEST(StringCalculatorAddTests, ExpectSumWithNewlineDelimiter) {
+    int expectedresult = 6;
+    std::string input = "1\n2,3";
+     StringCalculator objUnderTest;
+    int result =objUnderTest.CalculateAdd(input);
+
+    ASSERT_EQ(result, expectedresult);
 }
 
-void testNewlineDelimiter() {
-    int result = CalculateAdd("1\n2,3");
-    printf("Expect Sum With Newline Delimiter: %s\n", result == 6 ? "Passed" : "Failed");
+TEST(StringCalculatorAddTests, IgnoreNumbersGreaterThan1000) {
+    int expectedresult = 1;
+    std::string input = "1,1001";
+    StringCalculator objUnderTest;
+    int result =objUnderTest.CalculateAdd(input);
+
+    ASSERT_EQ(result, expectedresult);
 }
 
-void testIgnoreNumbersGreaterThan1000() {
-    int result = CalculateAdd("1,1001");
-    printf("Ignore Numbers Greater Than 1000: %s\n", result == 1 ? "Passed" : "Failed");
+TEST(StringCalculatorAddTests, ExpectSumWithCustomDelimiter) {
+    int expectedresult = 3;
+    std::string input = "//;\n1;2";
+    StringCalculator objUnderTest;
+    int result = objUnderTest.CalculateAdd(input);
+
+    ASSERT_EQ(result, expectedresult);
 }
 
-void testCustomDelimiter() {
-    int result = CalculateAdd("//;\n1;2");
-    printf("Expect Sum With Custom Delimiter: %s\n", result == 3 ? "Passed" : "Failed");
+// test case for input with a number just below and above 1000 :Boundary condition
+TEST(StringCalculatorAddTests, NumbersGreaterThan1000IgnoredInSum) {
+    int expectedresult1 = 1001;
+    std::string input1 = "999,2";
+    StringCalculator objUnderTest;
+    int result1 = objUnderTest.CalculateAdd(input1);
+    ASSERT_EQ(result1, expectedresult1);
+
+    int expectedresult2 = 2;
+    std::string input2 = "1001,2";
+    int result2 = objUnderTest.CalculateAdd(input2);
+    ASSERT_EQ(result2, expectedresult2);
 }
 
-void testBoundaryConditions() {
-    int result1 = CalculateAdd("999,2");
-    printf("Numbers Greater Than 1000 Ignored In Sum (999,2): %s\n", result1 == 1001 ? "Passed" : "Failed");
+//test case for input with non-numeric strings
+TEST(StringCalculatorAddTests, NonNumericInputReturnsZero) {
+    int expectedresult = 0;
+    std::string input = "Hello, world!";
+    StringCalculator objUnderTest;
+    int result = objUnderTest.CalculateAdd(input);
 
-    int result2 = CalculateAdd("1001,2");
-    printf("Numbers Greater Than 1000 Ignored In Sum (1001,2): %s\n", result2 == 2 ? "Passed" : "Failed");
-}
-
-void testNonNumericInput() {
-    int result = CalculateAdd("Hello, world!");
-    printf("Non-Numeric Input Returns Zero: %s\n", result == 0 ? "Passed" : "Failed");
-}
-
-int main() {
-    testEmptyInput();
-    testSingleZero();
-    testTwoNumbers();
-    testNegativeNumbers();
-    testNewlineDelimiter();
-    testIgnoreNumbersGreaterThan1000();
-    testCustomDelimiter();
-    testBoundaryConditions();
-    testNonNumericInput();
-
-    return 0;
+    ASSERT_EQ(result, expectedresult);
 }
